@@ -1,0 +1,5 @@
+log: info
+auth:
+  proxy:
+  csrf_token:
+  cookie:

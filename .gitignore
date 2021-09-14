@@ -5,8 +5,4 @@
 vendor/
 
 # Configuration
-.env
-
-
-
-
+config.*.yaml
