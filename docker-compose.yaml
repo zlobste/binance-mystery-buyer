@@ -1,0 +1,11 @@
+version: "3.5"
+
+services:
+  buyer:
+    image: zlobste/binance-mystery-buyer:test
+    environment:
+      - CONFIG=/config.yaml
+    volumes:
+      - ./config.yaml:/config.yaml
+    restart: always
+    command: binance-mystery-buyer run buyer
