@@ -23,5 +23,7 @@ func New(cfg config.Config) Service {
 }
 
 func (s *service) Run(ctx context.Context) error {
+	s.logger.Info("Buyer has started...")
+
 	return nil
 }
