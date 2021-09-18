@@ -22,4 +22,4 @@ ENV CONFIG=config.yaml
 EXPOSE 80
 
 # Run the executable
-CMD ["binance-mystery-buyer", "run", "buyer"]
+CMD ["binance-mystery-buyer"]
