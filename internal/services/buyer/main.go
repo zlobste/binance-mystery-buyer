@@ -31,12 +31,23 @@ func New(cfg config.Config) Service {
 func (s *service) Run(ctx context.Context) error {
 	s.logger.Info("Buyer has started...")
 
-	info, err := s.client.GetSignerInfo()
-	if err != nil {
-		return errors.Wrap(err, "error on getting user info")
-	}
+	//info, err := s.client.GetSignerInfo()
+	//if err != nil {
+	//	return errors.Wrap(err, "error on getting user info")
+	//}
+	//fmt.Println(fmt.Sprintf("User info: %s", info))
 
-	fmt.Println(fmt.Sprintf("User info: %s", info))
+	boxes, err := s.client.GetPendingMysteryBoxList()
+	if err != nil {
+		return errors.Wrap(err, "error on getting list of mystery boxes")
+	}
+	fmt.Println(fmt.Sprintf("Mystery boxes: %v", boxes))
+
+	box, err := s.client.GetMysteryBoxInfo(boxes[0].ID)
+	if err != nil {
+		return errors.Wrap(err, "error on getting box info")
+	}
+	fmt.Println(fmt.Sprintf("Box: %v", box))
 
 	return nil
 }
