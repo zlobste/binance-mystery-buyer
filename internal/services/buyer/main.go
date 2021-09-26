@@ -51,7 +51,7 @@ func (s *service) Run() error {
 	}
 	s.logger.WithField("signer_info", info).Info("Signed in successfully")
 
-	if err := gocron.Every(SalesCheckPeriod).Hours().Do(s.checkUpcomingSales); err != nil {
+	if err := gocron.Every(SalesCheckPeriod).Hours().From(gocron.NextTick()).Do(s.checkUpcomingSales); err != nil {
 		return errors.Wrap(err, "Failed to set scheduled check upcoming sales")
 	}
 	<-gocron.Start()
