@@ -1,9 +1,12 @@
-package requests
+package models
 
-import (
-	"encoding/json"
-	fhttp "github.com/valyala/fasthttp"
-)
+type SignerInfoResponse struct {
+	Data SignerInfo `json:"data"`
+}
+
+type SignerInfo struct {
+	Email string `json:"email"`
+}
 
 type UserBalanceRequest struct {
 	AssetList []string `json:"assetList"`
@@ -25,13 +28,4 @@ type Balance struct {
 	Total          string `json:"total"`
 	LogoUrl        string `json:"logoUrl"`
 	TotalFiatValue string `json:"totalFiatValue"`
-}
-
-func UnmarshalUserBalance(res *fhttp.Response) (*UserBalanceResponse, error) {
-	response := new(UserBalanceResponse)
-	if err := json.Unmarshal(res.Body(), response); err != nil {
-		return nil, err
-	}
-
-	return response, nil
 }

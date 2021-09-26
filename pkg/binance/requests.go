@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	fhttp "github.com/valyala/fasthttp"
-	"github.com/zlobste/binance-mystery-buyer/pkg/binance/requests"
+	"github.com/zlobste/binance-mystery-buyer/pkg/binance/models"
 	"net/http"
 )
 
@@ -21,48 +21,11 @@ const (
 const (
 	DefaultPage     = 1
 	DefaultPageSize = 100
-)
 
-const (
 	BoxStatusUpcoming = -1
-	BoxStatusSoldOut  = 1
 )
 
-type Client interface {
-	WithSigner(csrf, cookie string) Client
-	GetSignerInfo() (*requests.UserInfo, error)
-	GetSignerBalance(fiatName string, assetList ...string) ([]requests.Balance, error)
-	GetMysteryBoxList(page, size int64) ([]requests.MysteryBoxInfo, error)
-	GetUpcomingMysteryBoxList() ([]requests.MysteryBoxInfo, error)
-	GetMysteryBoxInfo(id string) (*requests.MysteryBoxAdvancedInfo, error)
-	BuyMysteryBox(id string, amount int64) error
-}
-
-type client struct {
-	signer Signer
-	addr   string
-	http   *fhttp.Client
-	log    *logrus.Logger
-}
-
-func New(addr string, log *logrus.Logger) Client {
-	return &client{
-		http: &fhttp.Client{},
-		addr: addr,
-		log:  log,
-	}
-}
-
-func (c *client) WithSigner(csrf, cookie string) Client {
-	return &client{
-		signer: NewAccount(csrf, cookie),
-		http:   c.http,
-		addr:   c.addr,
-		log:    c.log,
-	}
-}
-
-func (c *client) GetSignerInfo() (*requests.UserInfo, error) {
+func (c *client) GetSignerInfo() (*models.SignerInfo, error) {
 	res, err := c.post(fmt.Sprintf("%s%s", c.addr, URLUserInfo), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get signer info")
@@ -77,7 +40,7 @@ func (c *client) GetSignerInfo() (*requests.UserInfo, error) {
 		return nil, nil
 	}
 
-	result, err := requests.UnmarshalUserInfo(res)
+	result, err := models.UnmarshalSignerInfo(res)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal user info")
 	}
@@ -85,8 +48,8 @@ func (c *client) GetSignerInfo() (*requests.UserInfo, error) {
 	return &result.Data, nil
 }
 
-func (c *client) GetSignerBalance(fiatName string, assetList ...string) ([]requests.Balance, error) {
-	req := requests.UserBalanceRequest{
+func (c *client) GetSignerBalance(fiatName string, assetList ...string) ([]models.Balance, error) {
+	req := models.UserBalanceRequest{
 		AssetList: assetList,
 		FiatName:  fiatName,
 	}
@@ -108,7 +71,7 @@ func (c *client) GetSignerBalance(fiatName string, assetList ...string) ([]reque
 		}).Error("failed to buy the boxes")
 	}
 
-	result, err := requests.UnmarshalUserBalance(res)
+	result, err := models.UnmarshalSignerBalance(res)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal user balance list")
 	}
@@ -116,13 +79,13 @@ func (c *client) GetSignerBalance(fiatName string, assetList ...string) ([]reque
 	return result.Data.AssetList, nil
 }
 
-func (c *client) GetUpcomingMysteryBoxList() ([]requests.MysteryBoxInfo, error) {
+func (c *client) GetUpcomingMysteryBoxList() ([]models.MysteryBoxInfo, error) {
 	boxes, err := c.GetMysteryBoxList(DefaultPage, DefaultPageSize)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get a list of upcoming sales")
 	}
 
-	pendingBoxes := make([]requests.MysteryBoxInfo, 0)
+	pendingBoxes := make([]models.MysteryBoxInfo, 0)
 	for _, val := range boxes {
 		if val.MappingStatus == BoxStatusUpcoming {
 			pendingBoxes = append(pendingBoxes, val)
@@ -132,7 +95,7 @@ func (c *client) GetUpcomingMysteryBoxList() ([]requests.MysteryBoxInfo, error) 
 	return pendingBoxes, nil
 }
 
-func (c *client) GetMysteryBoxList(page, size int64) ([]requests.MysteryBoxInfo, error) {
+func (c *client) GetMysteryBoxList(page, size int64) ([]models.MysteryBoxInfo, error) {
 	res, err := c.get(fmt.Sprintf("%s%s/?page=%v&size=%v", c.addr, URLMysteryBoxList, page, size))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get a list of sales")
@@ -147,7 +110,7 @@ func (c *client) GetMysteryBoxList(page, size int64) ([]requests.MysteryBoxInfo,
 		return nil, nil
 	}
 
-	result, err := requests.UnmarshalMysteryBoxList(res)
+	result, err := models.UnmarshalMysteryBoxList(res)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal a list of sales")
 	}
@@ -155,7 +118,7 @@ func (c *client) GetMysteryBoxList(page, size int64) ([]requests.MysteryBoxInfo,
 	return result.Data, nil
 }
 
-func (c *client) GetMysteryBoxInfo(id string) (*requests.MysteryBoxAdvancedInfo, error) {
+func (c *client) GetMysteryBoxInfo(id string) (*models.MysteryBoxAdvancedInfo, error) {
 	res, err := c.get(fmt.Sprintf("%s%s?productId=%s", c.addr, URLMysteryBoxInfo, id))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get mystery box info")
@@ -170,7 +133,7 @@ func (c *client) GetMysteryBoxInfo(id string) (*requests.MysteryBoxAdvancedInfo,
 		return nil, nil
 	}
 
-	result, err := requests.UnmarshalMysteryBoxInfo(res)
+	result, err := models.UnmarshalMysteryBoxInfo(res)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal mystery box info")
 	}
@@ -179,7 +142,7 @@ func (c *client) GetMysteryBoxInfo(id string) (*requests.MysteryBoxAdvancedInfo,
 }
 
 func (c *client) BuyMysteryBox(id string, amount int64) error {
-	req := requests.BuyMysteryBoxesRequest{
+	req := models.BuyMysteryBoxesRequest{
 		ID:     id,
 		Amount: amount,
 	}
@@ -202,4 +165,32 @@ func (c *client) BuyMysteryBox(id string, amount int64) error {
 	}
 
 	return nil
+}
+
+func (c *client) get(url string) (*fhttp.Response, error) {
+	res := fhttp.AcquireResponse()
+	req := c.signer.SignRequest(fhttp.AcquireRequest())
+	req.Header.SetRequestURI(url)
+	req.Header.SetMethod(fhttp.MethodGet)
+
+	if err := c.http.Do(req, res); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (c *client) post(url string, body []byte) (*fhttp.Response, error) {
+	res := fhttp.AcquireResponse()
+	req := c.signer.SignRequest(fhttp.AcquireRequest())
+	req.Header.SetRequestURI(url)
+	req.Header.SetMethod(fhttp.MethodPost)
+	req.Header.SetContentType("application/json")
+	req.SetBody(body)
+
+	if err := c.http.Do(req, res); err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

@@ -8,7 +8,6 @@ require (
 	github.com/alecthomas/units v0.0.0-20210912230133-d1bdfacee922 // indirect
 	github.com/jasonlvhit/gocron v0.0.1
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/ouqiang/gocron v1.5.3 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0 // indirect

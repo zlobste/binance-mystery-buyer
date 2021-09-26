@@ -1,9 +1,18 @@
-package requests
+package models
 
-import (
-	"encoding/json"
-	fhttp "github.com/valyala/fasthttp"
-)
+type BuyMysteryBoxesRequest struct {
+	ID     string `json:"productId"`
+	Amount int64  `json:"number"`
+}
+
+type MysteryBoxesListResponse struct {
+	Data []MysteryBoxInfo `json:"data"`
+}
+
+type MysteryBoxInfo struct {
+	ID            string `json:"productId"`
+	MappingStatus int    `json:"mappingStatus"`
+}
 
 type MysteryBoxesInfoResponse struct {
 	Data MysteryBoxAdvancedInfo `json:"data"`
@@ -20,13 +29,4 @@ type MysteryBoxAdvancedInfo struct {
 	CurrentStore  int64  `json:"currentStore"`
 	TotalStore    int64  `json:"totalStore"`
 	LimitPerTime  int64  `json:"limitPerTime"`
-}
-
-func UnmarshalMysteryBoxInfo(res *fhttp.Response) (*MysteryBoxesInfoResponse, error) {
-	response := new(MysteryBoxesInfoResponse)
-	if err := json.Unmarshal(res.Body(), response); err != nil {
-		return nil, err
-	}
-
-	return response, nil
 }

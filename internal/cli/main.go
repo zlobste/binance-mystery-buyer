@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"github.com/alecthomas/kingpin"
 	"github.com/zlobste/binance-mystery-buyer/internal/config"
@@ -11,7 +10,6 @@ import (
 
 func Run(args []string) bool {
 	cfg := config.New(os.Getenv("CONFIG"))
-	ctx := context.Background()
 	log := cfg.Log()
 
 	defer func() {
@@ -34,7 +32,7 @@ func Run(args []string) bool {
 
 	switch cmd {
 	case buyerCmd.FullCommand():
-		if err := buyer.New(cfg).Run(ctx); err != nil {
+		if err := buyer.New(cfg).Run(); err != nil {
 			log.WithError(err).Error("failed to run deploy service")
 
 			return false

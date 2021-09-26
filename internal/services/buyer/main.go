@@ -1,13 +1,12 @@
 package buyer
 
 import (
-	"context"
 	"github.com/jasonlvhit/gocron"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/zlobste/binance-mystery-buyer/internal/config"
 	"github.com/zlobste/binance-mystery-buyer/pkg/binance"
-	"github.com/zlobste/binance-mystery-buyer/pkg/binance/requests"
+	"github.com/zlobste/binance-mystery-buyer/pkg/binance/models"
 	"math"
 	"strconv"
 	"sync"
@@ -20,7 +19,7 @@ const (
 )
 
 type Service interface {
-	Run(ctx context.Context) error
+	Run() error
 }
 
 type service struct {
@@ -44,7 +43,7 @@ func New(cfg config.Config) Service {
 	}
 }
 
-func (s *service) Run(ctx context.Context) error {
+func (s *service) Run() error {
 	s.logger.Info("Buyer has started...")
 
 	info, err := s.client.GetSignerInfo()
@@ -93,7 +92,7 @@ func (s *service) prepareToBuy(id string) {
 	s.buyBox(*info)
 }
 
-func (s *service) buyBox(box requests.MysteryBoxAdvancedInfo) {
+func (s *service) buyBox(box models.MysteryBoxAdvancedInfo) {
 	s.RLock()
 	defer s.RUnlock()
 	defer delete(s.pendingJobs, box.ID)
