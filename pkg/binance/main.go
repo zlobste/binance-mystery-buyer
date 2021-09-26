@@ -31,7 +31,7 @@ const (
 type Client interface {
 	WithSigner(csrf, cookie string) Client
 	GetSignerInfo() (*requests.UserInfo, error)
-	GetSignerBalance(assetList []string, fiatName string) ([]requests.Balance, error)
+	GetSignerBalance(fiatName string, assetList ...string) ([]requests.Balance, error)
 	GetMysteryBoxList(page, size int64) ([]requests.MysteryBoxInfo, error)
 	GetUpcomingMysteryBoxList() ([]requests.MysteryBoxInfo, error)
 	GetMysteryBoxInfo(id string) (*requests.MysteryBoxAdvancedInfo, error)
@@ -85,7 +85,7 @@ func (c *client) GetSignerInfo() (*requests.UserInfo, error) {
 	return &result.Data, nil
 }
 
-func (c *client) GetSignerBalance(assetList []string, fiatName string) ([]requests.Balance, error) {
+func (c *client) GetSignerBalance(fiatName string, assetList ...string) ([]requests.Balance, error) {
 	req := requests.UserBalanceRequest{
 		AssetList: assetList,
 		FiatName:  fiatName,
