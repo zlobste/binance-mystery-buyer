@@ -6,7 +6,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/zlobste/binance-mystery-buyer/internal/config"
 	"github.com/zlobste/binance-mystery-buyer/pkg/binance"
-	"github.com/zlobste/binance-mystery-buyer/pkg/binance/models"
 	"math"
 	"strconv"
 	"sync"
@@ -48,12 +47,12 @@ func (s *service) Run() error {
 
 	info, err := s.client.GetSignerInfo()
 	if err != nil {
-		return errors.Wrap(err, "error on getting user info")
+		return errors.Wrap(err, "error on getting signer info")
 	}
 	s.logger.WithField("signer_info", info).Info("Signed in successfully")
 
 	if err := gocron.Every(SalesCheckPeriod).Hours().Do(s.checkUpcomingSales); err != nil {
-		s.logger.WithError(err).Error("failed to check upcoming sales")
+		return errors.Wrap(err, "Failed to set scheduled check upcoming sales")
 	}
 	<-gocron.Start()
 
@@ -66,63 +65,58 @@ func (s *service) checkUpcomingSales() {
 
 	sales, err := s.client.GetUpcomingMysteryBoxList()
 	if err != nil {
-		s.logger.WithError(err).Error("failed to get upcoming sales")
+		s.logger.WithError(err).Error("Failed to get upcoming sales")
 
 		return
 	}
+	s.logger.WithField("upcoming sales", sales).Info("Upcoming sales have been checked")
 
 	for _, sale := range sales {
 		_, exists := s.pendingJobs[sale.ID]
 		if !exists {
 			s.pendingJobs[sale.ID] = true
+			s.logger.WithField("sale_id", sale.ID).Info("Upcoming sale has been added to buyer list")
 
 			go s.prepareToBuy(sale.ID)
 		}
 	}
 }
 
-func (s *service) prepareToBuy(id string) {
-	info, err := s.client.GetMysteryBoxInfo(id)
+func (s *service) prepareToBuy(saleID string) {
+	box, err := s.client.GetMysteryBoxInfo(saleID)
 	if err != nil {
-		s.logger.WithError(err).Error("failed to get mystery box info")
+		s.logger.WithError(err).WithField("sale_id", saleID).Error("Failed to get mystery box info")
 
 		return
 	}
+	s.logger.WithField("box_info", box).Info("Got mystery box info")
 
-	s.buyBox(*info)
-}
-
-func (s *service) buyBox(box models.MysteryBoxAdvancedInfo) {
-	s.RLock()
-	defer s.RUnlock()
-	defer delete(s.pendingJobs, box.ID)
-
-	startNano := time.Unix(box.StartTime, 0).UnixNano()
-	nowNano := time.Now().UnixNano()
+	startNano := time.Unix(box.StartTime, 0).UTC().UnixNano()
+	nowNano := time.Now().UTC().UnixNano()
 	time.Sleep(time.Duration(startNano-nowNano)*time.Nanosecond - 5*time.Minute)
 
 	balances, err := s.client.GetSignerBalance(DefaultFiat, box.Currency)
 	if err != nil {
-		s.logger.WithError(err).Error("failed to get signer balances")
+		s.logger.WithError(err).Error("Failed to get signer balances")
 
 		return
 	}
 
 	price, err := strconv.ParseFloat(box.Price, 64)
 	if err != nil {
-		s.logger.WithError(err).Error("failed to parse box price")
+		s.logger.WithError(err).Error("Failed to parse box price")
 
 		return
 	}
 
 	freeBalance, err := strconv.ParseFloat(balances[0].Free, 64)
 	if err != nil {
-		s.logger.WithError(err).Error("failed to parse signer balance")
+		s.logger.WithError(err).Error("Failed to parse signer balance")
 
 		return
 	}
 	if freeBalance == 0 {
-		s.logger.Info("Zero balance")
+		s.logger.WithField("balances", balances).Error("Zero balance, failed to buy boxes")
 
 		return
 	}
@@ -137,12 +131,24 @@ func (s *service) buyBox(box models.MysteryBoxAdvancedInfo) {
 	if box.LimitPerTime < ableToBuy {
 		ableToBuy = box.LimitPerTime
 	}
+	s.logger.WithFields(logrus.Fields{
+		"sale_id": box.ID,
+		"to_buy":  ableToBuy,
+	}).Info("Trying to buy mystery boxes")
 
-	nowNano = time.Now().UnixNano()
+	nowNano = time.Now().UTC().UnixNano()
 	time.Sleep(time.Duration(startNano-nowNano) * time.Nanosecond)
 
-	if err := s.client.BuyMysteryBox(box.ID, ableToBuy); err != nil {
-		s.logger.WithError(err).Error("failed to buy mystery boxes")
+	s.buyBox(box.ID, ableToBuy)
+}
+
+func (s *service) buyBox(saleID string, countToBuy int64) {
+	s.RLock()
+	defer s.RUnlock()
+	defer delete(s.pendingJobs, saleID)
+
+	if err := s.client.BuyMysteryBox(saleID, countToBuy); err != nil {
+		s.logger.WithError(err).Error("Failed to buy mystery boxes")
 
 		return
 	}

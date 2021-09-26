@@ -19,14 +19,13 @@ type MysteryBoxesInfoResponse struct {
 }
 
 type MysteryBoxAdvancedInfo struct {
-	ID            string `json:"productId"`
-	Name          string `json:"name"`
-	Price         string `json:"price"`
-	Currency      string `json:"currency"`
-	StartTime     int64  `json:"startTime"`
-	EndTime       int64  `json:"endTime"`
-	MappingStatus int    `json:"mappingStatus"`
-	CurrentStore  int64  `json:"currentStore"`
-	TotalStore    int64  `json:"totalStore"`
-	LimitPerTime  int64  `json:"limitPerTime"`
+	MysteryBoxInfo
+	Name         string `json:"name"`
+	Price        string `json:"price"`
+	Currency     string `json:"currency"`
+	StartTime    int64  `json:"startTime"`
+	EndTime      int64  `json:"endTime"`
+	CurrentStore int64  `json:"currentStore"`
+	TotalStore   int64  `json:"totalStore"`
+	LimitPerTime int64  `json:"limitPerTime"`
 }

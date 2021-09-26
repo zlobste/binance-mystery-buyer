@@ -25,27 +25,31 @@ const (
 	BoxStatusUpcoming = -1
 )
 
-func (c *client) GetSignerInfo() (*models.SignerInfo, error) {
+var (
+	ErrUnsuccessfulRequest = errors.New("Unsuccessful request")
+)
+
+func (c *client) GetSignerInfo() (models.SignerInfo, error) {
 	res, err := c.post(fmt.Sprintf("%s%s", c.addr, URLUserInfo), nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get signer info")
+		return models.SignerInfo{}, errors.Wrap(err, "failed to get signer info")
 	}
 
 	if res.StatusCode() != http.StatusOK {
 		c.log.WithFields(logrus.Fields{
 			"status": res.StatusCode(),
 			"body":   string(res.Body()),
-		}).Error("failed to get signer info")
+		}).Error("Failed to get signer info")
 
-		return nil, nil
+		return models.SignerInfo{}, errors.Wrap(ErrUnsuccessfulRequest, "failed to get signer info")
 	}
 
 	result, err := models.UnmarshalSignerInfo(res)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal user info")
+		return models.SignerInfo{}, errors.Wrap(err, "failed to unmarshal user info")
 	}
 
-	return &result.Data, nil
+	return result.Data, nil
 }
 
 func (c *client) GetSignerBalance(fiatName string, assetList ...string) ([]models.Balance, error) {
@@ -68,7 +72,9 @@ func (c *client) GetSignerBalance(fiatName string, assetList ...string) ([]model
 		c.log.WithFields(logrus.Fields{
 			"status": res.StatusCode(),
 			"body":   string(res.Body()),
-		}).Error("failed to buy the boxes")
+		}).Error("Failed to buy the boxes")
+
+		return nil, errors.Wrap(ErrUnsuccessfulRequest, "failed to get signer balance")
 	}
 
 	result, err := models.UnmarshalSignerBalance(res)
@@ -105,9 +111,9 @@ func (c *client) GetMysteryBoxList(page, size int64) ([]models.MysteryBoxInfo, e
 		c.log.WithFields(logrus.Fields{
 			"status": res.StatusCode(),
 			"body":   string(res.Body()),
-		}).Error("failed to get a list of sales")
+		}).Error("Failed to get a list of sales")
 
-		return nil, nil
+		return nil, errors.Wrap(ErrUnsuccessfulRequest, "failed to get a list of sales")
 	}
 
 	result, err := models.UnmarshalMysteryBoxList(res)
@@ -118,27 +124,27 @@ func (c *client) GetMysteryBoxList(page, size int64) ([]models.MysteryBoxInfo, e
 	return result.Data, nil
 }
 
-func (c *client) GetMysteryBoxInfo(id string) (*models.MysteryBoxAdvancedInfo, error) {
+func (c *client) GetMysteryBoxInfo(id string) (models.MysteryBoxAdvancedInfo, error) {
 	res, err := c.get(fmt.Sprintf("%s%s?productId=%s", c.addr, URLMysteryBoxInfo, id))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get mystery box info")
+		return models.MysteryBoxAdvancedInfo{}, errors.Wrap(err, "failed to get mystery box info")
 	}
 
 	if res.StatusCode() != http.StatusOK {
 		c.log.WithFields(logrus.Fields{
 			"status": res.StatusCode(),
 			"body":   string(res.Body()),
-		}).Error("failed to get mystery box info")
+		}).Error("Failed to get mystery box info")
 
-		return nil, nil
+		return models.MysteryBoxAdvancedInfo{}, errors.Wrap(ErrUnsuccessfulRequest, "failed to get mystery box info")
 	}
 
 	result, err := models.UnmarshalMysteryBoxInfo(res)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal mystery box info")
+		return models.MysteryBoxAdvancedInfo{}, errors.Wrap(err, "failed to unmarshal mystery box info")
 	}
 
-	return &result.Data, nil
+	return result.Data, nil
 }
 
 func (c *client) BuyMysteryBox(id string, amount int64) error {
@@ -161,8 +167,12 @@ func (c *client) BuyMysteryBox(id string, amount int64) error {
 		c.log.WithFields(logrus.Fields{
 			"status": res.StatusCode(),
 			"body":   string(res.Body()),
-		}).Error("failed to buy the boxes")
+		}).Error("Failed to buy the boxes")
+
+		return errors.Wrap(ErrUnsuccessfulRequest, "failed to buy the boxes")
 	}
+
+	c.log.WithField("res_body", string(res.Body())).Info("Client has bought mystery boxes")
 
 	return nil
 }

@@ -8,11 +8,11 @@ import (
 
 type Client interface {
 	WithSigner(csrf, cookie string) Client
-	GetSignerInfo() (*models.SignerInfo, error)
+	GetSignerInfo() (models.SignerInfo, error)
 	GetSignerBalance(fiatName string, assetList ...string) ([]models.Balance, error)
 	GetMysteryBoxList(page, size int64) ([]models.MysteryBoxInfo, error)
 	GetUpcomingMysteryBoxList() ([]models.MysteryBoxInfo, error)
-	GetMysteryBoxInfo(id string) (*models.MysteryBoxAdvancedInfo, error)
+	GetMysteryBoxInfo(id string) (models.MysteryBoxAdvancedInfo, error)
 	BuyMysteryBox(id string, amount int64) error
 }
 
