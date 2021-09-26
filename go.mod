@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/kingpin v2.2.6+incompatible
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20210912230133-d1bdfacee922 // indirect
+	github.com/fatih/structs v1.1.0
 	github.com/jasonlvhit/gocron v0.0.1
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/pkg/errors v0.9.1

@@ -1,6 +1,7 @@
 package buyer
 
 import (
+	"github.com/fatih/structs"
 	"github.com/jasonlvhit/gocron"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -49,7 +50,8 @@ func (s *service) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "error on getting signer info")
 	}
-	s.logger.WithField("signer_info", info).Info("Signed in successfully")
+
+	s.logger.WithFields(structs.Map(info)).Info("Signed in successfully")
 
 	if err := gocron.Every(SalesCheckPeriod).Hours().From(gocron.NextTick()).Do(s.checkUpcomingSales); err != nil {
 		return errors.Wrap(err, "Failed to set scheduled check upcoming sales")
@@ -69,7 +71,7 @@ func (s *service) checkUpcomingSales() {
 
 		return
 	}
-	s.logger.WithField("upcoming sales", sales).Info("Upcoming sales have been checked")
+	s.logger.WithField("upcoming_sales", sales).Info("Upcoming sales have been checked")
 
 	for _, sale := range sales {
 		_, exists := s.pendingJobs[sale.ID]
@@ -89,7 +91,7 @@ func (s *service) prepareToBuy(saleID string) {
 
 		return
 	}
-	s.logger.WithField("box_info", box).Info("Got mystery box info")
+	s.logger.WithFields(structs.Map(box)).Info("Got mystery box info")
 
 	startNano := time.Unix(box.StartTime, 0).UTC().UnixNano()
 	nowNano := time.Now().UTC().UnixNano()
