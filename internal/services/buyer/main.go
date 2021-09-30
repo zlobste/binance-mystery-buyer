@@ -95,7 +95,7 @@ func (s *service) prepareToBuy(saleID string) {
 
 	startNano := time.Unix(box.StartTime, 0).UTC().UnixNano()
 	nowNano := time.Now().UTC().UnixNano()
-	time.Sleep(time.Duration(startNano-nowNano)*time.Nanosecond - 5*time.Minute)
+	time.Sleep(time.Duration(nowNano-startNano)*time.Nanosecond - 5*time.Minute)
 
 	balances, err := s.client.GetSignerBalance(DefaultFiat, box.Currency)
 	if err != nil {
@@ -139,7 +139,7 @@ func (s *service) prepareToBuy(saleID string) {
 	}).Info("Trying to buy mystery boxes")
 
 	nowNano = time.Now().UTC().UnixNano()
-	time.Sleep(time.Duration(startNano-nowNano) * time.Nanosecond)
+	time.Sleep(time.Duration(nowNano-startNano) * time.Nanosecond)
 
 	s.buyBox(box.ID, ableToBuy)
 }
